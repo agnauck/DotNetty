@@ -244,19 +244,23 @@ namespace DotNetty.Common
 
             public bool Close(object trackedObject)
             {
-                if (this.owner.gcNotificationMap.Remove(trackedObject))
+                if (this.owner.gcNotificationMap.TryGetValue(trackedObject, out var value))
                 {
+                    GC.SuppressFinalize(value);
+                    this.owner.gcNotificationMap.Remove(trackedObject);
+
                     Interlocked.Exchange(ref this.head, null);
                     return true;
                 }
                 return false;
             }
 
-            // This is called from GCNotice finalizer 
-            internal void CloseFinal(object trackedObject)
+            // This is called from GCNotice finalizer or Rearm
+            internal void CloseFinal()
             {
-                if (this.owner.gcNotificationMap.Remove(trackedObject) 
-                    && Volatile.Read(ref this.head) != null)
+                // If finalizer is called, the reference in gcNotificationMap
+                // should already be released. And no need to release when Rearm
+                if (Volatile.Read(ref this.head) != null)
                 {
                     this.owner.ReportLeak(this);
                 }
@@ -268,7 +272,7 @@ namespace DotNetty.Common
                 if (oldHead == null)
                 {
                     // Already closed
-                    return  string.Empty;
+                    return string.Empty;
                 }
 
                 long dropped = Interlocked.Read(ref this.droppedRecords);
@@ -407,13 +411,13 @@ namespace DotNetty.Common
             {
                 object trackedObject = this.referent;
                 this.referent = null;
-                this.leak.CloseFinal(trackedObject);
+                this.leak.CloseFinal();
             }
 
             public void Rearm(DefaultResourceLeak newLeak)
             {
                 DefaultResourceLeak oldLeak = Interlocked.Exchange(ref this.leak, newLeak);
-                oldLeak.CloseFinal(this.referent);
+                oldLeak.CloseFinal();
             }
         }
     }
