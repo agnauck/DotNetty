@@ -377,7 +377,7 @@ namespace DotNetty.Common
 
                 // TODO: Use StackTrace class and support excludedMethods NETStandard2.0
                 // Append the stack trace.
-                buf.Append(this.stackTrace);
+                buf.Append(this.stackTrace).Append(StringUtil.Newline);
                 return buf.ToString();
             }
         }
