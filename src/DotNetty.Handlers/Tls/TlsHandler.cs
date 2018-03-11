@@ -39,6 +39,7 @@ namespace DotNetty.Handlers.Tls
         BatchingPendingWriteQueue pendingUnencryptedWrites;
         Task lastContextWriteTask;
         bool firedChannelRead;
+        volatile FlushMode flushMode = FlushMode.ForceFlush;
         IByteBuffer pendingSslStreamReadBuffer;
         int pendingSslStreamReadLength;
         Task<int> pendingSslStreamReadFuture;
@@ -140,8 +141,7 @@ namespace DotNetty.Handlers.Tls
 
                         if (oldState.Has(TlsHandlerState.FlushedBeforeHandshake))
                         {
-                            self.Wrap(self.capturedContext);
-                            self.capturedContext.Flush();
+                            self.WrapAndFlush(self.capturedContext);
                         }
                         break;
                     }
@@ -610,6 +610,12 @@ namespace DotNetty.Handlers.Tls
                 return;
             }
 
+            this.WrapAndFlush(context);
+        }
+
+        void WrapAndFlush(IChannelHandlerContext context)
+        {
+            this.flushMode = FlushMode.NoFlush;
             try
             {
                 this.Wrap(context);
@@ -617,7 +623,20 @@ namespace DotNetty.Handlers.Tls
             finally
             {
                 // We may have written some parts of data before an exception was thrown so ensure we always flush.
-                context.Flush();
+                if (this.flushMode == FlushMode.NoFlush)
+                {
+                    this.flushMode = FlushMode.ForceFlush;
+                    context.Flush();
+                }
+                else
+                {
+                    context.Executor.Execute((state) => {
+                        var self = (TlsHandler)state;
+
+                        self.flushMode = FlushMode.ForceFlush;
+                        self.capturedContext.Flush();
+                    }, this);
+                }
             }
         }
 
@@ -675,6 +694,12 @@ namespace DotNetty.Handlers.Tls
 
         void FinishWrap(byte[] buffer, int offset, int count)
         {
+            // In Mono(with btls provider) on linux, and maybe also for apple provider, Write is called in another thread,
+            // so it will run after the call to Flush.
+            if (this.flushMode == FlushMode.NoFlush && !this.capturedContext.Executor.InEventLoop)
+            {
+                this.flushMode = FlushMode.PendingFlush;
+            }
             IByteBuffer output;
             if (count == 0)
             {
@@ -686,7 +711,7 @@ namespace DotNetty.Handlers.Tls
                 output.WriteBytes(buffer, offset, count);
             }
 
-            this.lastContextWriteTask = this.capturedContext.WriteAsync(output);
+            this.lastContextWriteTask = (this.flushMode == FlushMode.ForceFlush) ? this.capturedContext.WriteAndFlushAsync(output) : this.capturedContext.WriteAsync(output);
         }
 
         Task FinishWrapNonAppDataAsync(byte[] buffer, int offset, int count)
@@ -743,6 +768,22 @@ namespace DotNetty.Handlers.Tls
                 this.capturedContext.FireUserEventTriggered(new TlsHandshakeCompletionEvent(cause));
                 this.CloseAsync(this.capturedContext);
             }
+        }
+
+        enum FlushMode : byte
+        {
+            /// <summary>
+            /// Do nothing with Flush.
+            /// </summary>
+            NoFlush = 0,
+            /// <summary>
+            /// An Flush is or will be posted to IEventExecutor.
+            /// </summary>
+            PendingFlush = 1,
+            /// <summary>
+            /// Force FinishWrap to call Flush.
+            /// </summary>
+            ForceFlush = 2,
         }
 
         sealed class MediationStream : Stream
