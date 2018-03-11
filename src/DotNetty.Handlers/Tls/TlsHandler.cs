@@ -373,7 +373,6 @@ namespace DotNetty.Handlers.Tls
                             if (!currentReadFuture.IsCompleted)
                             {
                                 // we did feed the whole current packet to SslStream yet it did not produce any result -> move to the next packet in input
-                                //Contract.Assert(this.mediationStream.SourceReadableBytes == 0, "Read all");
 
                                 break;
                             }
@@ -381,7 +380,6 @@ namespace DotNetty.Handlers.Tls
                             int read = currentReadFuture.Result;
                             totalRead += read;
 
-                            //FIXME: read == 0 in Mono
                             if (read == 0)
                             {
                                 //Stream closed
@@ -827,29 +825,28 @@ namespace DotNetty.Handlers.Tls
             public void ResetSource()
             {
                 //Mono will run BeginRead in async and it's running with ResetSource at the same time
-                var leftLen = this.SourceReadableBytes;
-                if (leftLen > 0)
+                lock (sourceLock)
                 {
-                    lock (sourceLock)
+                    int leftLen = this.SourceReadableBytes;
+                    if (leftLen > 0)
                     {
-                        leftLen = this.SourceReadableBytes;
-                        if (leftLen > 0)
-                        {
-                            var data = new byte[leftLen];
-                            Buffer.BlockCopy(this.input, this.inputStartOffset + this.inputOffset, data, 0, leftLen);
-                            this.input = data;
-                            this.inputStartOffset = 0;
-                            this.inputOffset = 0;
-                            this.inputLength = leftLen;
+                        var data = new byte[leftLen];
+                        Buffer.BlockCopy(this.input, this.inputStartOffset + this.inputOffset, data, 0, leftLen);
+                        this.input = data;
+                        this.inputStartOffset = 0;
+                        this.inputOffset = 0;
+                        this.inputLength = leftLen;
 
-                            return;
-                        }
+                        return;
+                    }
+                    else
+                    {
+                        this.input = null;
+                        this.inputStartOffset = 0;
+                        this.inputOffset = 0;
+                        this.inputLength = 0;
                     }
                 }
-                this.input = null;
-                this.inputStartOffset = 0;
-                this.inputOffset = 0;
-                this.inputLength = 0;
             }
 
             public void ExpandSource(int count)
@@ -860,7 +857,6 @@ namespace DotNetty.Handlers.Tls
                 {
                     this.inputLength += count;
 
-                    TaskCompletionSource<int> promise = this.readCompletionSource;
                     ArraySegment<byte> sslBuffer = this.sslOwnedBuffer;
                     if (sslBuffer.Array == null)
                     {
@@ -877,16 +873,21 @@ namespace DotNetty.Handlers.Tls
                         {
                             var self = (MediationStream)ms;
                             TaskCompletionSource<int> p = self.readCompletionSource;
-                            this.readCompletionSource = null;
+                            self.readCompletionSource = null;
                             p.TrySetResult(self.readByteCount);
                         },
                         this)
                         .RunSynchronously(TaskScheduler.Default);
 #else
                     int read = this.ReadFromInput(sslBuffer.Array, sslBuffer.Offset, sslBuffer.Count);
-                    //this.readCompletionSource = null;
+
+                    TaskCompletionSource<int> promise = this.readCompletionSource;
+                    this.readCompletionSource = null;
                     promise.TrySetResult(read);
-                    this.readCallback?.Invoke(promise.Task);
+
+                    AsyncCallback callback = this.readCallback;
+                    this.readCallback = null;
+                    callback?.Invoke(promise.Task);
 #endif
                 }
             }
@@ -903,6 +904,7 @@ namespace DotNetty.Handlers.Tls
                     return Task.FromResult(read);
                 }
             
+                Contract.Assert(this.sslOwnedBuffer.Array == null);
                 // take note of buffer - we will pass bytes there once available
                 this.sslOwnedBuffer = new ArraySegment<byte>(buffer, offset, count);
                 this.readCompletionSource = new TaskCompletionSource<int>();
@@ -920,6 +922,7 @@ namespace DotNetty.Handlers.Tls
                     return res;
                 }
 
+                Contract.Assert(this.sslOwnedBuffer.Array == null);
                 // take note of buffer - we will pass bytes there once available
                 this.sslOwnedBuffer = new ArraySegment<byte>(buffer, offset, count);
                 this.readCompletionSource = new TaskCompletionSource<int>(state);
@@ -935,8 +938,8 @@ namespace DotNetty.Handlers.Tls
                     return syncResult.Result;
                 }
 
+                Debug.Assert(this.readCompletionSource == null || this.readCompletionSource.Task == asyncResult);
                 Contract.Assert(!((Task<int>)asyncResult).IsCanceled);
-                Debug.Assert(asyncResult == this.readCompletionSource?.Task);
 
                 try
                 {
@@ -946,12 +949,6 @@ namespace DotNetty.Handlers.Tls
                 {
                     ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
                     throw; // unreachable
-                }
-                finally
-                {
-                    this.readCompletionSource = null;
-                    this.readCallback = null;
-                    this.sslOwnedBuffer = default(ArraySegment<byte>);
                 }
             }
 
@@ -986,6 +983,7 @@ namespace DotNetty.Handlers.Tls
                         return result;
                     default:
                         this.writeCallback = callback;
+                        Contract.Assert(this.writeCompletion == null);
                         var tcs = new TaskCompletionSource(state);
                         this.writeCompletion = tcs;
                         task.ContinueWith(WriteCompleteCallback, this, TaskContinuationOptions.ExecuteSynchronously);
@@ -996,22 +994,28 @@ namespace DotNetty.Handlers.Tls
             static void HandleChannelWriteComplete(Task writeTask, object state)
             {
                 var self = (MediationStream)state;
+
+                AsyncCallback callback = self.writeCallback;
+                self.writeCallback = null;
+
+                var promise = self.writeCompletion;
+                self.writeCompletion = null;
+
                 switch (writeTask.Status)
                 {
                     case TaskStatus.RanToCompletion:
-                        self.writeCompletion.TryComplete();
+                        promise.TryComplete();
                         break;
                     case TaskStatus.Canceled:
-                        self.writeCompletion.TrySetCanceled();
+                        promise.TrySetCanceled();
                         break;
                     case TaskStatus.Faulted:
-                        self.writeCompletion.TrySetException(writeTask.Exception);
+                        promise.TrySetException(writeTask.Exception);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException("Unexpected task status: " + writeTask.Status);
                 }
-
-                self.writeCallback?.Invoke(self.writeCompletion.Task);
+                callback?.Invoke(promise.Task);
             }
 
             public override void EndWrite(IAsyncResult asyncResult)
@@ -1021,7 +1025,7 @@ namespace DotNetty.Handlers.Tls
                     return;
                 }
 
-                Debug.Assert(asyncResult == this.writeCompletion?.Task);
+                Debug.Assert(this.writeCompletion == null || this.writeCompletion.Task == asyncResult);
                 try
                 {
                     ((Task<int>)asyncResult).Wait();
@@ -1030,11 +1034,6 @@ namespace DotNetty.Handlers.Tls
                 {
                     ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
                     throw;
-                }
-                finally
-                {
-                    this.writeCallback = null;
-                    this.writeCompletion = null;
                 }
             }
 #endif
