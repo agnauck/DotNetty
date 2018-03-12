@@ -734,7 +734,7 @@ namespace DotNetty.Buffers
         internal static void SetLongLE(ref byte bytes, long value)
         {
 #if RW_UNSAFE
-            if (BitConverter.IsLittleEndian)
+            if (!BitConverter.IsLittleEndian)
                 value = BinaryPrimitives.ReverseEndianness(value);
             Unsafe.WriteUnaligned<long>(ref bytes, value);
 #else

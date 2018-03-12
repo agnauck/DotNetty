@@ -138,7 +138,7 @@ namespace DotNetty.Buffers
 
             if (a.HasArray && b.HasArray)
             {
-                return PlatformDependent.ByteArrayEqualsEx(a.Array, a.ArrayOffset + a.ReaderIndex, b.Array, b.ArrayOffset + b.ReaderIndex, length);
+                return PlatformDependent.ByteArrayEqualsEx(a.Array, a.ArrayOffset + aStartIndex, b.Array, b.ArrayOffset + bStartIndex, length);
             }
             else
             {
