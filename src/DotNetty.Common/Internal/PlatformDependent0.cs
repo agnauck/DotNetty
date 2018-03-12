@@ -46,7 +46,11 @@ namespace DotNetty.Common.Internal
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe bool ByteArrayEquals(byte[] bytes1, int startPos1, byte[] bytes2, int startPos2, int length) =>
+        internal static bool ByteArrayEquals(byte[] bytes1, int startPos1, byte[] bytes2, int startPos2, int length) =>
             new ReadOnlySpan<byte>(bytes1, startPos1, length).SequenceEqual(new ReadOnlySpan<byte>(bytes2, startPos2, length));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static int ByteArrayCompareTo(byte[] bytes1, int startPos1, int len1, byte[] bytes2, int startPos2, int len2) =>
+            new ReadOnlySpan<byte>(bytes1, startPos1, len1).SequenceCompareTo(new ReadOnlySpan<byte>(bytes2, startPos2, len2));
     }
 }

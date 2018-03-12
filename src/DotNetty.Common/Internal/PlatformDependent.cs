@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#define USE_SPAN2
 // ReSharper disable ConvertToAutoPropertyWhenPossible
 namespace DotNetty.Common.Internal
 {
@@ -9,7 +10,9 @@ namespace DotNetty.Common.Internal
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Runtime.CompilerServices;
+#if USE_SPAN2
     using System.Runtime.InteropServices;
+#endif
     using System.Threading;
     using DotNetty.Common.Internal.Logging;
 
@@ -50,9 +53,16 @@ namespace DotNetty.Common.Internal
                 return PlatformDependent0.ByteArrayEquals(array1, startPos1, array2, startPos2, length);
         }
 
-        public static unsafe bool ByteArrayEquals2(byte[] bytes1, int startPos1, byte[] bytes2, int startPos2, int length)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool ByteArrayEqualsEx(byte[] bytes1, int startPos1, byte[] bytes2, int startPos2, int length)
         {
             return PlatformDependent0.ByteArrayEquals(bytes1, startPos1, bytes2, startPos2, length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ByteArrayCompareToEx(byte[] bytes1, int startPos1, int len1, byte[] bytes2, int startPos2, int len2)
+        {
+            return PlatformDependent0.ByteArrayCompareTo(bytes1, startPos1, len1, bytes2, startPos2, len2);
         }
 
         public static unsafe void CopyMemory(byte[] src, int srcIndex, byte[] dst, int dstIndex, int length)
@@ -145,12 +155,13 @@ namespace DotNetty.Common.Internal
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref byte AsRef(this byte[] array, int index = 0) =>
-#if NETSTANDARD2_0
+#if USE_SPAN2
             ref Add(ref MemoryMarshal.GetReference(new ReadOnlySpan<byte>(array)), index);
-            //ref MemoryMarshal.GetReference(new ReadOnlySpan<byte>(array, index, 1));
+#elif USE_SPAN
+            ref MemoryMarshal.GetReference(new ReadOnlySpan<byte>(array, index, 1));
 #else
             ref array[index];
 #endif
-        #endregion
+#endregion
     }
 }

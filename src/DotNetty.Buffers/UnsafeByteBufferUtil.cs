@@ -481,7 +481,7 @@ namespace DotNetty.Buffers
                 value = BinaryPrimitives.ReverseEndianness(value);
             return value;
 #else
-            return unchecked((short)((Unsafe.ReadUnaligned<byte>(ref bytes) << 8) | Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 1))));
+            return unchecked((short)(((bytes) << 8) | (Add(ref bytes, 1))));
 #endif
         }
 
@@ -494,21 +494,39 @@ namespace DotNetty.Buffers
                 value = BinaryPrimitives.ReverseEndianness(value);
             return value;
 #else
-            return unchecked((short)((Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 1)) << 8) | Unsafe.ReadUnaligned<byte>(ref bytes)));
+            return unchecked((short)(((Add(ref bytes, 1)) << 8) | (bytes)));
 #endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int GetUnsignedMedium(ref byte bytes) =>
-            Unsafe.ReadUnaligned<byte>(ref bytes) << 16 |
-            Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 1)) << 8 |
-            Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 2));
+        internal static int GetUnsignedMedium(ref byte bytes)
+        {
+#if RW_UNSAFE
+            int value = Unsafe.ReadUnaligned<int>(ref bytes);
+            if (BitConverter.IsLittleEndian)
+                value = BinaryPrimitives.ReverseEndianness(value);
+            return unchecked((int)((uint)value >> 8));
+#else
+            return (bytes) << 16 |
+                (Add(ref bytes, 1)) << 8 |
+                (Add(ref bytes, 2));
+#endif
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static int GetUnsignedMediumLE(ref byte bytes) =>
-            Unsafe.ReadUnaligned<byte>(ref bytes) |
-            Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 1)) << 8 |
-            Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 2)) << 16;
+        internal static int GetUnsignedMediumLE(ref byte bytes)
+        {
+#if RW_UNSAFE
+            int value = Unsafe.ReadUnaligned<int>(ref bytes);
+            if (!BitConverter.IsLittleEndian)
+                value = BinaryPrimitives.ReverseEndianness(value);
+            return value & 0x00FFFFFF;
+#else
+            return (bytes) |
+                (Add(ref bytes, 1)) << 8 |
+                (Add(ref bytes, 2)) << 16;
+#endif
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static int GetInt(ref byte bytes)
@@ -519,10 +537,10 @@ namespace DotNetty.Buffers
                 value = BinaryPrimitives.ReverseEndianness(value);
             return value;
 #else
-            return Unsafe.ReadUnaligned<byte>(ref bytes) << 24 |
-                Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 1)) << 16 |
-                Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 2)) << 8 |
-                Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 4));
+            return (bytes) << 24 |
+                (Add(ref bytes, 1)) << 16 |
+                (Add(ref bytes, 2)) << 8 |
+                (Add(ref bytes, 4));
 #endif
         }
 
@@ -535,10 +553,10 @@ namespace DotNetty.Buffers
                 value = BinaryPrimitives.ReverseEndianness(value);
             return value;
 #else
-            return Unsafe.ReadUnaligned<byte>(ref bytes) |
-                Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 1)) << 8 |
-                Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 2)) << 16 |
-                Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 4)) << 24;
+            return (bytes) |
+                (Add(ref bytes, 1)) << 8 |
+                (Add(ref bytes, 2)) << 16 |
+                (Add(ref bytes, 4)) << 24;
 #endif
         }
 
@@ -553,14 +571,14 @@ namespace DotNetty.Buffers
 #else
             unchecked
             {
-                int i1 = (Unsafe.ReadUnaligned<byte>(ref bytes) << 24) |
-                    (Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 1)) << 16) |
-                    (Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 2)) << 8) |
-                    (Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 3)));
-                int i2 = (Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 4)) << 24) |
-                    (Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 5)) << 16) |
-                    (Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 6)) << 8) |
-                    (Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 7)));
+                int i1 = ((bytes) << 24) |
+                    ((Add(ref bytes, 1)) << 16) |
+                    ((Add(ref bytes, 2)) << 8) |
+                    ((Add(ref bytes, 3)));
+                int i2 = ((Add(ref bytes, 4)) << 24) |
+                    ((Add(ref bytes, 5)) << 16) |
+                    ((Add(ref bytes, 6)) << 8) |
+                    ((Add(ref bytes, 7)));
                 return (uint)i2 | ((long)i1 << 32);
             }
 #endif
@@ -577,14 +595,14 @@ namespace DotNetty.Buffers
 #else
             unchecked
             {
-                int i1 = (Unsafe.ReadUnaligned<byte>(ref bytes)) |
-                    (Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 1)) << 8) |
-                    (Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 2)) << 16) |
-                    (Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 3)) << 24);
-                int i2 = (Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 4))) |
-                    (Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 5)) << 8) |
-                    (Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 6)) << 16) |
-                    (Unsafe.ReadUnaligned<byte>(ref Add(ref bytes, 7)) << 24);
+                int i1 = ((bytes)) |
+                    ((Add(ref bytes, 1)) << 8) |
+                    ((Add(ref bytes, 2)) << 16) |
+                    ((Add(ref bytes, 3)) << 24);
+                int i2 = ((Add(ref bytes, 4))) |
+                    ((Add(ref bytes, 5)) << 8) |
+                    ((Add(ref bytes, 6)) << 16) |
+                    ((Add(ref bytes, 7)) << 24);
                 return (uint)i1 | ((long)i2 << 32);
             }
 #endif
@@ -596,22 +614,35 @@ namespace DotNetty.Buffers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void SetShort(ref byte bytes, int value)
         {
-            //BinaryPrimitives.WriteInt16BigEndian()
+#if RW_UNSAFE
+            var v2 = unchecked((short)value);
+            if (BitConverter.IsLittleEndian)
+                v2 = BinaryPrimitives.ReverseEndianness(v2);
+            Unsafe.WriteUnaligned<short>(ref bytes, v2);
+#else
             unchecked
             {
-                Unsafe.WriteUnaligned(ref bytes, (byte)((ushort)value >> 8));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 1), (byte)value);
+                bytes = (byte)((ushort)value >> 8);
+                Add(ref bytes, 1) = (byte)value;
             }
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void SetShortLE(ref byte bytes, int value)
         {
+#if RW_UNSAFE
+            var v2 = unchecked((short)value);
+            if (!BitConverter.IsLittleEndian)
+                v2 = BinaryPrimitives.ReverseEndianness(v2);
+            Unsafe.WriteUnaligned<short>(ref bytes, v2);
+#else
             unchecked
             {
-                Unsafe.WriteUnaligned(ref bytes, (byte)value);
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 1), (byte)((ushort)value >> 8));
+                bytes = (byte)value;
+                Add(ref bytes, 1) = (byte)((ushort)value >> 8);
             }
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -620,9 +651,9 @@ namespace DotNetty.Buffers
             unchecked
             {
                 uint unsignedValue = (uint)value;
-                Unsafe.WriteUnaligned(ref bytes, (byte)(unsignedValue >> 16));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 1), (byte)(unsignedValue >> 8));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 2), (byte)unsignedValue);
+                bytes = (byte)(unsignedValue >> 16);
+                Add(ref bytes, 1) = (byte)(unsignedValue >> 8);
+                Add(ref bytes, 2) = (byte)unsignedValue;
             }
         }
 
@@ -632,71 +663,94 @@ namespace DotNetty.Buffers
             unchecked
             {
                 uint unsignedValue = (uint)value;
-                Unsafe.WriteUnaligned(ref bytes, (byte)unsignedValue);
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 1), (byte)(unsignedValue >> 8));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 2), (byte)(unsignedValue >> 16));
+                bytes = (byte)unsignedValue;
+                Add(ref bytes, 1) = (byte)(unsignedValue >> 8);
+                Add(ref bytes, 2) = (byte)(unsignedValue >> 16);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void SetInt(ref byte bytes, int value)
         {
+#if RW_UNSAFE
+            if (BitConverter.IsLittleEndian)
+                value = BinaryPrimitives.ReverseEndianness(value);
+            Unsafe.WriteUnaligned<int>(ref bytes, value);
+#else
             unchecked
             {
                 uint unsignedValue = (uint)value;
-                Unsafe.WriteUnaligned(ref bytes, (byte)(unsignedValue >> 24));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 1), (byte)(unsignedValue >> 16));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 2), (byte)(unsignedValue >> 8));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 3), (byte)unsignedValue);
+                bytes = (byte)(unsignedValue >> 24);
+                Add(ref bytes, 1) = (byte)(unsignedValue >> 16);
+                Add(ref bytes, 2) = (byte)(unsignedValue >> 8);
+                Add(ref bytes, 3) = (byte)unsignedValue;
             }
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void SetIntLE(ref byte bytes, int value)
         {
+#if RW_UNSAFE
+            if (!BitConverter.IsLittleEndian)
+                value = BinaryPrimitives.ReverseEndianness(value);
+            Unsafe.WriteUnaligned<int>(ref bytes, value);
+#else
             unchecked
             {
                 uint unsignedValue = (uint)value;
-                Unsafe.WriteUnaligned(ref bytes, (byte)unsignedValue);
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 1), (byte)(unsignedValue >> 8));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 2), (byte)(unsignedValue >> 16));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 3), (byte)(unsignedValue >> 24));
+                bytes = (byte)unsignedValue;
+                Add(ref bytes, 1) = (byte)(unsignedValue >> 8);
+                Add(ref bytes, 2) = (byte)(unsignedValue >> 16);
+                Add(ref bytes, 3) = (byte)(unsignedValue >> 24);
             }
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void SetLong(ref byte bytes, long value)
         {
+#if RW_UNSAFE
+            if (BitConverter.IsLittleEndian)
+                value = BinaryPrimitives.ReverseEndianness(value);
+            Unsafe.WriteUnaligned<long>(ref bytes, value);
+#else
             unchecked
             {
                 ulong unsignedValue = (ulong)value;
-                Unsafe.WriteUnaligned(ref bytes, (byte)(unsignedValue >> 56));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 1), (byte)(unsignedValue >> 48));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 2), (byte)(unsignedValue >> 40));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 3), (byte)(unsignedValue >> 32));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 4), (byte)(unsignedValue >> 24));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 5), (byte)(unsignedValue >> 16));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 6), (byte)(unsignedValue >> 8));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 7), (byte)unsignedValue);
+                bytes = (byte)(unsignedValue >> 56);
+                Add(ref bytes, 1) = (byte)(unsignedValue >> 48);
+                Add(ref bytes, 2) = (byte)(unsignedValue >> 40);
+                Add(ref bytes, 3) = (byte)(unsignedValue >> 32);
+                Add(ref bytes, 4) = (byte)(unsignedValue >> 24);
+                Add(ref bytes, 5) = (byte)(unsignedValue >> 16);
+                Add(ref bytes, 6) = (byte)(unsignedValue >> 8);
+                Add(ref bytes, 7) = (byte)unsignedValue;
             }
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void SetLongLE(ref byte bytes, long value)
         {
-            //ByteBufferUtil.SwapInt()
+#if RW_UNSAFE
+            if (BitConverter.IsLittleEndian)
+                value = BinaryPrimitives.ReverseEndianness(value);
+            Unsafe.WriteUnaligned<long>(ref bytes, value);
+#else
             unchecked
             {
                 ulong unsignedValue = (ulong)value;
-                Unsafe.WriteUnaligned(ref bytes, (byte)unsignedValue);
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 1), (byte)(unsignedValue >> 8));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 2), (byte)(unsignedValue >> 16));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 3), (byte)(unsignedValue >> 24));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 4), (byte)(unsignedValue >> 32));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 5), (byte)(unsignedValue >> 40));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 6), (byte)(unsignedValue >> 48));
-                Unsafe.WriteUnaligned(ref Add(ref bytes, 7), (byte)(unsignedValue >> 56));
+                bytes = (byte)unsignedValue;
+                Add(ref bytes, 1) = (byte)(unsignedValue >> 8);
+                Add(ref bytes, 2) = (byte)(unsignedValue >> 16);
+                Add(ref bytes, 3) = (byte)(unsignedValue >> 24);
+                Add(ref bytes, 4) = (byte)(unsignedValue >> 32);
+                Add(ref bytes, 5) = (byte)(unsignedValue >> 40);
+                Add(ref bytes, 6) = (byte)(unsignedValue >> 48);
+                Add(ref bytes, 7) = (byte)(unsignedValue >> 56);
             }
+#endif
         }
 
         internal static UnpooledUnsafeDirectByteBufferEx NewUnsafeDirectByteBufferEx(
