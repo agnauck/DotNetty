@@ -166,15 +166,23 @@ namespace DotNetty.Common.Internal
         public static ref byte Add(ref byte array, int index) => ref Unsafe.Add(ref array, index);//see Unsafe.AddByteOffset?
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ref byte AsRef(this byte[] array, int index = 0) =>
+        public static ref byte AsRef(this byte[] array, int index = 0)
+        {
+            if (SpanSupportInNative)
+            {
 #if USE_SPAN2
-            ref Add(ref MemoryMarshal.GetReference(new ReadOnlySpan<byte>(array)), index);
+                return ref Add(ref MemoryMarshal.GetReference(new ReadOnlySpan<byte>(array)), index);
 #elif USE_SPAN
-            ref MemoryMarshal.GetReference(new ReadOnlySpan<byte>(array, index, 1));
-#else
-            //better for !SpanSupportInNative
-            ref array[index];
+                return ref MemoryMarshal.GetReference(new ReadOnlySpan<byte>(array, index, 1));
 #endif
-#endregion
+            }
+            else
+            {
+                //better for !SpanSupportInNative
+                return ref array[index];
+            }
+        }
+
+        #endregion
     }
 }
