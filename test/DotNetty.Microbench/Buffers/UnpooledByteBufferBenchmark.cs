@@ -4,11 +4,14 @@
 namespace DotNetty.Microbench.Buffers
 {
     using BenchmarkDotNet.Attributes;
+    using BenchmarkDotNet.Attributes.Columns;
     using BenchmarkDotNet.Attributes.Jobs;
     using DotNetty.Buffers;
     using DotNetty.Common;
 
-    [ClrJob, CoreJob, MonoJob]
+    [Config(typeof(MultipleRuntimes))]
+    //[AllStatisticsColumn]
+    //[DisassemblyDiagnoser(printAsm: true, printIL: true, printSource: false)]
     [BenchmarkCategory("ByteBuffer")]
     public class UnpooledByteBufferBenchmark
     {
@@ -17,9 +20,9 @@ namespace DotNetty.Microbench.Buffers
             ResourceLeakDetector.Level = ResourceLeakDetector.DetectionLevel.Disabled;
         }
 
-        IByteBuffer unsafeBufferEx;
-        IByteBuffer unsafeBuffer;
-        IByteBuffer buffer;
+        AbstractByteBuffer unsafeBufferEx;
+        AbstractByteBuffer unsafeBuffer;
+        AbstractByteBuffer buffer;
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -42,6 +45,15 @@ namespace DotNetty.Microbench.Buffers
         }
 
         [Benchmark]
+        public void CheckIndexUnsafeEx() => this.unsafeBufferEx.CheckIndex(0, 8);
+
+        [Benchmark]
+        public void CheckIndexUnsafe() => this.unsafeBuffer.CheckIndex(0, 8);
+
+        [Benchmark]
+        public void CheckIndex() => this.buffer.CheckIndex(0, 8);
+
+        [Benchmark]
         public byte GetByteUnsafeEx() => this.unsafeBufferEx.GetByte(0);
 
         [Benchmark]
@@ -50,31 +62,31 @@ namespace DotNetty.Microbench.Buffers
         [Benchmark]
         public byte GetByte() => this.buffer.GetByte(0);
 
-        [Benchmark]
+        //[Benchmark]
         public short GetShortUnsafeEx() => this.unsafeBufferEx.GetShort(0);
 
-        [Benchmark]
+        //[Benchmark]
         public short GetShortUnsafe() => this.unsafeBuffer.GetShort(0);
 
-        [Benchmark]
+        //[Benchmark]
         public short GetShort() => this.buffer.GetShort(0);
 
-        [Benchmark]
+        //[Benchmark]
         public int GetMediumUnsafeEx() => this.unsafeBufferEx.GetMedium(0);
 
-        [Benchmark]
+        //[Benchmark]
         public int GetMediumUnsafe() => this.unsafeBuffer.GetMedium(0);
 
-        [Benchmark]
+        //[Benchmark]
         public int GetMedium() => this.buffer.GetMedium(0);
 
-        [Benchmark]
+        //[Benchmark]
         public int GetIntUnsafeEx() => this.unsafeBufferEx.GetInt(0);
 
-        [Benchmark]
+        //[Benchmark]
         public int GetIntUnsafe() => this.unsafeBuffer.GetInt(0);
 
-        [Benchmark]
+        //[Benchmark]
         public int GetInt() => this.buffer.GetInt(0);
 
         [Benchmark]

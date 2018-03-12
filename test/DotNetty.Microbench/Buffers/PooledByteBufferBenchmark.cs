@@ -4,11 +4,14 @@
 namespace DotNetty.Microbench.Buffers
 {
     using BenchmarkDotNet.Attributes;
+    using BenchmarkDotNet.Attributes.Columns;
     using BenchmarkDotNet.Attributes.Jobs;
     using DotNetty.Buffers;
     using DotNetty.Common;
 
-    [ClrJob, CoreJob, MonoJob]
+    //[AllStatisticsColumn]
+    [Config(typeof(MultipleRuntimes))]
+    //[DisassemblyDiagnoser(printAsm: true, printIL: true, printSource: false)]
     [BenchmarkCategory("ByteBuffer")]
     public class PooledByteBufferBenchmark
     {
@@ -50,49 +53,49 @@ namespace DotNetty.Microbench.Buffers
         public void CheckIndex() => this.buffer.CheckIndex(0, 8);
 
         [Benchmark]
-        public byte GetByteUnsafeEx() => this.unsafeBufferEx.GetByte(0);
+        public byte GetByteUnsafeEx() => this.unsafeBufferEx._GetByte(0);
 
         [Benchmark]
-        public byte GetByteUnsafe() => this.unsafeBuffer.GetByte(0);
+        public byte GetByteUnsafe() => this.unsafeBuffer._GetByte(0);
 
         [Benchmark]
-        public byte GetByte() => this.buffer.GetByte(0);
+        public byte GetByte() => this.buffer._GetByte(0);
 
-        [Benchmark]
+        //[Benchmark]
         public short GetShortUnsafe() => this.unsafeBufferEx.GetShort(0);
 
-        [Benchmark]
+        //[Benchmark]
         public short GetShortUnsafeEx() => this.unsafeBuffer.GetShort(0);
 
-        [Benchmark]
+        //[Benchmark]
         public short GetShort() => this.buffer.GetShort(0);
 
-        [Benchmark]
+        //[Benchmark]
         public int GetMediumUnsafe() => this.unsafeBufferEx.GetMedium(0);
 
-        [Benchmark]
+        //[Benchmark]
         public int GetMediumUnsafeEx() => this.unsafeBuffer.GetMedium(0);
 
-        [Benchmark]
+        //[Benchmark]
         public int GetMedium() => this.buffer.GetMedium(0);
 
-        [Benchmark]
+        //[Benchmark]
         public int GetIntUnsafe() => this.unsafeBufferEx.GetInt(0);
 
-        [Benchmark]
+        //[Benchmark]
         public int GetIntUnsafeEx() => this.unsafeBuffer.GetInt(0);
 
-        [Benchmark]
+        //[Benchmark]
         public int GetInt() => this.buffer.GetInt(0);
 
         [Benchmark]
-        public long GetLongUnsafeEx() => this.unsafeBufferEx.GetLong(0);
+        public long GetLongUnsafeEx() => this.unsafeBufferEx._GetLong(0);
 
         [Benchmark]
-        public long GetLongUnsafe() => this.unsafeBuffer.GetLong(0);
+        public long GetLongUnsafe() => this.unsafeBuffer._GetLong(0);
 
         [Benchmark]
-        public long GetLong() => this.buffer.GetLong(0);
+        public long GetLong() => this.buffer._GetLong(0);
 
         [Benchmark]
         public bool EqualsUnsafeEx() => ByteBufferUtil.Equals(this.unsafeBufferEx, this.unsafeBufferEx);
