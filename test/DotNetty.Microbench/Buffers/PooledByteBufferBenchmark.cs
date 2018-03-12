@@ -8,7 +8,7 @@ namespace DotNetty.Microbench.Buffers
     using DotNetty.Buffers;
     using DotNetty.Common;
 
-    [CoreJob]
+    [ClrJob, CoreJob]
     [BenchmarkCategory("ByteBuffer")]
     public class PooledByteBufferBenchmark
     {
@@ -17,15 +17,20 @@ namespace DotNetty.Microbench.Buffers
             ResourceLeakDetector.Level = ResourceLeakDetector.DetectionLevel.Disabled;
         }
 
+        AbstractByteBuffer unsafeBufferEx;
         AbstractByteBuffer unsafeBuffer;
         AbstractByteBuffer buffer;
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.unsafeBuffer = (AbstractByteBuffer)PooledByteBufferAllocator.Default.DirectBuffer(8);
-            this.buffer = (AbstractByteBuffer)PooledByteBufferAllocator.Default.HeapBuffer(8);
+            this.unsafeBufferEx = (AbstractByteBuffer)PooledByteBufferAllocator.Default.NewDirectBufferEx(65536, AbstractByteBufferAllocator.DefaultMaxCapacity);
+            this.unsafeBuffer = (AbstractByteBuffer)PooledByteBufferAllocator.Default.DirectBuffer(65536);
+            this.buffer = (AbstractByteBuffer)PooledByteBufferAllocator.Default.HeapBuffer(65536);
             this.buffer.WriteLong(1L);
+            this.unsafeBufferEx.SetWriterIndex(65536);
+            this.unsafeBuffer.SetWriterIndex(65536);
+            this.buffer.SetWriterIndex(65536);
         }
 
         [GlobalCleanup]
@@ -36,10 +41,16 @@ namespace DotNetty.Microbench.Buffers
         }
 
         [Benchmark]
+        public void CheckIndexUnsafeEx() => this.unsafeBufferEx.CheckIndex(0, 8);
+
+        [Benchmark]
         public void CheckIndexUnsafe() => this.unsafeBuffer.CheckIndex(0, 8);
 
         [Benchmark]
         public void CheckIndex() => this.buffer.CheckIndex(0, 8);
+
+        [Benchmark]
+        public byte GetByteUnsafeEx() => this.unsafeBufferEx.GetByte(0);
 
         [Benchmark]
         public byte GetByteUnsafe() => this.unsafeBuffer.GetByte(0);
@@ -48,27 +59,48 @@ namespace DotNetty.Microbench.Buffers
         public byte GetByte() => this.buffer.GetByte(0);
 
         [Benchmark]
-        public short GetShortUnsafe() => this.unsafeBuffer.GetShort(0);
+        public short GetShortUnsafe() => this.unsafeBufferEx.GetShort(0);
+
+        [Benchmark]
+        public short GetShortUnsafeEx() => this.unsafeBuffer.GetShort(0);
 
         [Benchmark]
         public short GetShort() => this.buffer.GetShort(0);
 
         [Benchmark]
-        public int GetMediumUnsafe() => this.unsafeBuffer.GetMedium(0);
+        public int GetMediumUnsafe() => this.unsafeBufferEx.GetMedium(0);
+
+        [Benchmark]
+        public int GetMediumUnsafeEx() => this.unsafeBuffer.GetMedium(0);
 
         [Benchmark]
         public int GetMedium() => this.buffer.GetMedium(0);
 
         [Benchmark]
-        public int GetIntUnsafe() => this.unsafeBuffer.GetInt(0);
+        public int GetIntUnsafe() => this.unsafeBufferEx.GetInt(0);
+
+        [Benchmark]
+        public int GetIntUnsafeEx() => this.unsafeBuffer.GetInt(0);
 
         [Benchmark]
         public int GetInt() => this.buffer.GetInt(0);
+
+        [Benchmark]
+        public long GetLongUnsafeEx() => this.unsafeBufferEx.GetLong(0);
 
         [Benchmark]
         public long GetLongUnsafe() => this.unsafeBuffer.GetLong(0);
 
         [Benchmark]
         public long GetLong() => this.buffer.GetLong(0);
+
+        [Benchmark]
+        public bool EqualsUnsafeEx() => ByteBufferUtil.Equals(this.unsafeBufferEx, this.unsafeBufferEx);
+
+        [Benchmark]
+        public bool EqualsUnsafe() => ByteBufferUtil.Equals(this.unsafeBuffer, this.unsafeBuffer);
+
+        [Benchmark]
+        public bool Equals() => ByteBufferUtil.Equals(this.buffer, this.buffer);
     }
 }

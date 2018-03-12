@@ -9,6 +9,7 @@ namespace DotNetty.Common.Internal
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Runtime.CompilerServices;
+    using System.Runtime.InteropServices;
     using System.Threading;
     using DotNetty.Common.Internal.Logging;
 
@@ -49,6 +50,11 @@ namespace DotNetty.Common.Internal
                 return PlatformDependent0.ByteArrayEquals(array1, startPos1, array2, startPos2, length);
         }
 
+        public static unsafe bool ByteArrayEquals2(byte[] bytes1, int startPos1, byte[] bytes2, int startPos2, int length)
+        {
+            return PlatformDependent0.ByteArrayEquals(bytes1, startPos1, bytes2, startPos2, length);
+        }
+
         public static unsafe void CopyMemory(byte[] src, int srcIndex, byte[] dst, int dstIndex, int length)
         {
             if (length > 0)
@@ -61,7 +67,7 @@ namespace DotNetty.Common.Internal
         {
             if (length > 0)
             {
-                Unsafe.CopyBlockUnaligned(dst, src, unchecked((uint)length));
+                Unsafe.CopyBlock(dst, src, unchecked((uint)length));
             }
         }
 
@@ -70,7 +76,7 @@ namespace DotNetty.Common.Internal
             if (length > 0)
             {
                 fixed (byte* destination = &dst[dstIndex])
-                    Unsafe.CopyBlockUnaligned(destination, src, unchecked((uint)length));
+                    Unsafe.CopyBlock(destination, src, unchecked((uint)length));
             }
         }
 
@@ -79,7 +85,23 @@ namespace DotNetty.Common.Internal
             if (length > 0)
             {
                 fixed (byte* source = &src[srcIndex])
-                    Unsafe.CopyBlockUnaligned(dst, source, unchecked((uint)length));
+                    Unsafe.CopyBlock(dst, source, unchecked((uint)length));
+            }
+        }
+
+        public static unsafe void CopyMemory(ref byte src, ref byte dst, int length)
+        {
+            if (length > 0)
+            {
+                Unsafe.CopyBlockUnaligned(ref dst, ref src, unchecked((uint)length));
+            }
+        }
+
+        public static unsafe void Clear(ref byte src, int length)
+        {
+            if (length > 0)
+            {
+                Unsafe.InitBlockUnaligned(ref src, default(byte), unchecked((uint)length));
             }
         }
 
@@ -99,6 +121,14 @@ namespace DotNetty.Common.Internal
             }
         }
 
+        public static unsafe void SetMemory(ref byte src, int length, byte value)
+        {
+            if (length > 0)
+            {
+                Unsafe.InitBlockUnaligned(ref src, value, unchecked((uint)length));
+            }
+        }
+
         public static unsafe void SetMemory(byte[] src, int srcIndex, int length, byte value)
         {
             if (length > 0)
@@ -106,5 +136,21 @@ namespace DotNetty.Common.Internal
                 Unsafe.InitBlockUnaligned(ref src[srcIndex], value, unchecked((uint)length));
             }
         }
+
+
+        #region Test
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref byte Add(ref byte array, int index) => ref Unsafe.Add(ref array, index);//see Unsafe.AddByteOffset?
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref byte AsRef(this byte[] array, int index = 0) =>
+#if NETSTANDARD2_0
+            ref Add(ref MemoryMarshal.GetReference(new ReadOnlySpan<byte>(array)), index);
+            //ref MemoryMarshal.GetReference(new ReadOnlySpan<byte>(array, index, 1));
+#else
+            ref array[index];
+#endif
+        #endregion
     }
 }

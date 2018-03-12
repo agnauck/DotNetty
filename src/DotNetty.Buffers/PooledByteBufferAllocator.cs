@@ -267,6 +267,17 @@ namespace DotNetty.Buffers
             return ToLeakAwareBuffer(buf);
         }
 
+        public IByteBuffer NewDirectBufferEx(int initialCapacity, int maxCapacity)
+        {
+            PoolThreadCache<byte[]> cache = this.threadCache.Value;
+            PoolArena<byte[]> directArena = cache.DirectArena;
+
+            IByteBuffer buf;
+            buf = UnsafeByteBufferUtil.NewUnsafeDirectByteBufferEx(this, initialCapacity, maxCapacity);
+
+            return ToLeakAwareBuffer(buf);
+        }
+
         public static bool DefaultPreferDirect => PlatformDependent.DirectBufferPreferred;
 
         public override bool IsDirectBufferPooled => this.heapArenas != null;

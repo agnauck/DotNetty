@@ -3,7 +3,9 @@
 
 namespace DotNetty.Common.Internal
 {
+    using System;
     using System.Runtime.CompilerServices;
+    using System.Runtime.InteropServices;
 
     static class PlatformDependent0
     {
@@ -42,5 +44,9 @@ namespace DotNetty.Common.Internal
             }
             return *baseOffset1 == *baseOffset2;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static unsafe bool ByteArrayEquals(byte[] bytes1, int startPos1, byte[] bytes2, int startPos2, int length) =>
+            new ReadOnlySpan<byte>(bytes1, startPos1, length).SequenceEqual(new ReadOnlySpan<byte>(bytes2, startPos2, length));
     }
 }

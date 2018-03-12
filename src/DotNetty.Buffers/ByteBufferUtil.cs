@@ -5,6 +5,7 @@ namespace DotNetty.Buffers
 {
     using System;
     using System.Diagnostics.Contracts;
+    using System.Runtime.CompilerServices;
     using System.Text;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
@@ -124,7 +125,7 @@ namespace DotNetty.Buffers
         ///     <p />
         ///     {@code a[aStartIndex : aStartIndex + length] == b[bStartIndex : bStartIndex + length]}
         /// </summary>
-        public static bool Equals(IByteBuffer a, int aStartIndex, IByteBuffer b, int bStartIndex, int length)
+        public unsafe static bool Equals(IByteBuffer a, int aStartIndex, IByteBuffer b, int bStartIndex, int length)
         {
             if (aStartIndex < 0 || bStartIndex < 0 || length < 0)
             {
@@ -138,6 +139,85 @@ namespace DotNetty.Buffers
             int longCount = unchecked((int)((uint)length >> 3));
             int byteCount = length & 7;
 
+            const int mode = 4;
+            if (mode == 3 || mode == 4)
+            {
+                //7744
+                if (a.HasArray && b.HasArray)
+                {
+                    var _a = a.Array;
+                    var _b = b.Array;
+                    if (mode == 3)
+                    {
+                        aStartIndex += a.ArrayOffset;
+                        bStartIndex += b.ArrayOffset;
+                        for (int i = length; i > 0; i--)
+                        {
+                            if (_a[aStartIndex] != _b[bStartIndex])
+                            {
+                                return false;
+                            }
+                            aStartIndex++;
+                            bStartIndex++;
+                        }
+                        return true;
+                    }
+                    else
+                    {
+                        //8171??
+                        return PlatformDependent.ByteArrayEquals2(a.Array, a.ArrayOffset, b.Array, b.ArrayOffset, length);
+                    }
+                }
+            }
+            else if (mode == 1 || mode == 2)
+            {
+                while (a is WrappedByteBuffer)
+                    a = a.Unwrap();
+                while (b is WrappedByteBuffer)
+                    b = b.Unwrap();
+
+                if (a is AbstractByteBuffer _a && b is AbstractByteBuffer _b)
+                {
+                    if (mode == 1)
+                    {
+                        //8253
+                        for (int i = longCount; i > 0; i--)
+                        {
+                            if (_a._GetLong(aStartIndex) != _b._GetLong(bStartIndex))
+                            {
+                                return false;
+                            }
+                            aStartIndex += 8;
+                            bStartIndex += 8;
+                        }
+
+                        for (int i = byteCount; i > 0; i--)
+                        {
+                            if (_a._GetByte(aStartIndex) != _b._GetByte(bStartIndex))
+                            {
+                                return false;
+                            }
+                            aStartIndex++;
+                            bStartIndex++;
+                        }
+                    }
+                    else
+                    {
+                        //8033
+                        for (int i = length; i > 0; i--)
+                        {
+                            if (_a._GetByte(aStartIndex) != _b._GetByte(bStartIndex))
+                            {
+                                return false;
+                            }
+                            aStartIndex++;
+                            bStartIndex++;
+                        }
+                    }
+                    return true;
+                }
+            }
+            //8094
             for (int i = longCount; i > 0; i--)
             {
                 if (a.GetLong(aStartIndex) != b.GetLong(bStartIndex))
@@ -786,6 +866,7 @@ namespace DotNetty.Buffers
         /// <summary>
         ///     Toggles the endianness of the specified 64-bit long integer.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long SwapLong(long value)
             => ((SwapInt((int)value) & 0xFFFFFFFF) << 32)
                 | (SwapInt((int)(value >> 32)) & 0xFFFFFFFF);
@@ -793,6 +874,7 @@ namespace DotNetty.Buffers
         /// <summary>
         ///     Toggles the endianness of the specified 32-bit integer.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int SwapInt(int value)
             => ((SwapShort((short)value) & 0xFFFF) << 16)
                 | (SwapShort((short)(value >> 16)) & 0xFFFF);
@@ -800,6 +882,7 @@ namespace DotNetty.Buffers
         /// <summary>
         ///     Toggles the endianness of the specified 16-bit integer.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static short SwapShort(short value) => (short)(((value & 0xFF) << 8) | (value >> 8) & 0xFF);
 
     }
