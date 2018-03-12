@@ -16,8 +16,7 @@ namespace DotNetty.Buffers
     {
         static readonly ThreadLocalPool<PooledUnsafeDirectByteBufferEx> Recycler = new ThreadLocalPool<PooledUnsafeDirectByteBufferEx>(handle => new PooledUnsafeDirectByteBufferEx(handle, 0));
 
-        Memory<byte> memoryRef;
-        MemoryHandle memoryPin;
+        byte* memoryAddress;
 
         internal static PooledUnsafeDirectByteBufferEx NewInstance(int maxCapacity)
         {
@@ -46,7 +45,8 @@ namespace DotNetty.Buffers
 
         void InitMemoryAddress()
         {
-            this.memoryRef = new Memory<byte>(this.Memory, this.Offset, 1);
+            //It's safe to get an unfixed pointer here since the main buffer is pinned in DirectArena.MemoryChunk.ctor
+            this.memoryAddress = (byte*)Unsafe.AsPointer(ref this.Memory.AsRef(this.Offset));
         }
 
         public override bool IsDirect => true;
@@ -168,9 +168,7 @@ namespace DotNetty.Buffers
 
         public override IntPtr AddressOfPinnedMemory()
         {
-            if (!this.memoryPin.HasPointer)
-                this.memoryPin = this.memoryRef.Retain(true);
-            return new IntPtr(this.memoryPin.Pointer);
+            return new IntPtr(this.memoryAddress);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

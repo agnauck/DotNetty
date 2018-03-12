@@ -9,6 +9,7 @@ namespace DotNetty.Common.Internal
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Reflection;
     using System.Runtime.CompilerServices;
 #if USE_SPAN2
     using System.Runtime.InteropServices;
@@ -21,6 +22,7 @@ namespace DotNetty.Common.Internal
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance(typeof(PlatformDependent));
 
         static readonly bool UseDirectBuffer;
+        static readonly bool SpanSupportInNative;
 
         static PlatformDependent()
         {
@@ -29,6 +31,16 @@ namespace DotNetty.Common.Internal
             {
                 Logger.Debug("-Dio.netty.noPreferDirect: {}", !UseDirectBuffer);
             }
+
+            try
+            {
+                SpanSupportInNative = typeof(Span<>).GetTypeInfo().Assembly == typeof(string).GetTypeInfo().Assembly;
+            }
+            catch
+            {
+                SpanSupportInNative = false;
+            }
+
         }
 
         public static bool DirectBufferPreferred => UseDirectBuffer;
@@ -160,6 +172,7 @@ namespace DotNetty.Common.Internal
 #elif USE_SPAN
             ref MemoryMarshal.GetReference(new ReadOnlySpan<byte>(array, index, 1));
 #else
+            //better for !SpanSupportInNative
             ref array[index];
 #endif
 #endregion

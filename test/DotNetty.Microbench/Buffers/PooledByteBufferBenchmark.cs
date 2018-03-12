@@ -8,7 +8,7 @@ namespace DotNetty.Microbench.Buffers
     using DotNetty.Buffers;
     using DotNetty.Common;
 
-    [ClrJob, CoreJob]
+    [ClrJob, CoreJob, MonoJob]
     [BenchmarkCategory("ByteBuffer")]
     public class PooledByteBufferBenchmark
     {

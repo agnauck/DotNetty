@@ -5,6 +5,7 @@
 namespace DotNetty.Buffers
 {
     using System;
+    using System.Buffers;
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Runtime.CompilerServices;
@@ -20,6 +21,8 @@ namespace DotNetty.Buffers
         int capacity;
         bool doNotFree;
         byte[] buffer;
+        Memory<byte> memoryRef;
+        MemoryHandle memoryPin;
 
         public UnpooledUnsafeDirectByteBufferEx(IByteBufferAllocator alloc, int initialCapacity, int maxCapacity)
             : base(maxCapacity)
@@ -61,6 +64,7 @@ namespace DotNetty.Buffers
         protected virtual void FreeDirect(byte[] array)
         {
             // NOOP rely on GC.
+
         }
 
         void SetByteBuffer(byte[] array, bool tryFree)
@@ -79,8 +83,14 @@ namespace DotNetty.Buffers
                         this.FreeDirect(oldBuffer);
                     }
                 }
+                MemoryHandle memoryPin = this.memoryPin;
+                if (memoryPin.HasPointer)
+                {
+                    memoryPin.Dispose();
+                    this.memoryPin = default(MemoryHandle);
+                }
             }
-            //this.memory = new Memory<byte>(array);
+            this.memoryRef = new Memory<byte>(array);
             this.buffer = array;
             this.capacity = array.Length;
         }
@@ -148,7 +158,12 @@ namespace DotNetty.Buffers
             return ref this.buffer.AsRef();
         }
 
-        public override IntPtr AddressOfPinnedMemory() => IntPtr.Zero;//TODO: this.memory.Retain().Pointer
+        public override IntPtr AddressOfPinnedMemory()
+        {
+            if (!this.memoryPin.HasPointer)
+                this.memoryPin = this.memoryRef.Retain(true);
+            return new IntPtr(this.memoryPin.Pointer);
+        }
 
         protected internal override byte _GetByte(int index)
         {
