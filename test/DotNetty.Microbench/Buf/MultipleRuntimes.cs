@@ -3,16 +3,11 @@
 
 namespace DotNetty.Microbench
 {
-    using System;
     using BenchmarkDotNet.Configs;
     using BenchmarkDotNet.Environments;
     using BenchmarkDotNet.Jobs;
-    using BenchmarkDotNet.Running;
     using BenchmarkDotNet.Toolchains.CsProj;
-    using BenchmarkDotNet.Toolchains.DotNetCli;
-    using DotNetty.Microbench.Allocators;
-    using DotNetty.Microbench.Buffers;
-    using DotNetty.Microbench.Concurrency;
+    using System;
 
     public class MultipleRuntimes : ManualConfig
     {
