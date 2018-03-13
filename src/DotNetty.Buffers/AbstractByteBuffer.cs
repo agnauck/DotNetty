@@ -1298,7 +1298,7 @@ namespace DotNetty.Buffers
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void EnsureAccessible()
+        protected internal void EnsureAccessible()
         {
             if (CheckAccessible && this.ReferenceCount == 0)
             {

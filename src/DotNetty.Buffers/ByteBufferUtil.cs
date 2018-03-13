@@ -199,6 +199,122 @@ namespace DotNetty.Buffers
                 }
             }
         }
+        internal static bool Equals1(IByteBuffer a, int aStartIndex, IByteBuffer b, int bStartIndex, int length)
+        {
+            if (aStartIndex < 0 || bStartIndex < 0 || length < 0)
+            {
+                throw new ArgumentException("All indexes and lengths must be non-negative");
+            }
+            if (a.WriterIndex - length < aStartIndex || b.WriterIndex - length < bStartIndex)
+            {
+                return false;
+            }
+
+            {
+                int longCount = unchecked((int)((uint)length >> 3));
+                int byteCount = length & 7;
+                {
+                    for (int i = longCount; i > 0; i--)
+                    {
+                        if (a.GetLong(aStartIndex) != b.GetLong(bStartIndex))
+                        {
+                            return false;
+                        }
+                        aStartIndex += 8;
+                        bStartIndex += 8;
+                    }
+
+                    for (int i = byteCount; i > 0; i--)
+                    {
+                        if (a.GetByte(aStartIndex) != b.GetByte(bStartIndex))
+                        {
+                            return false;
+                        }
+                        aStartIndex++;
+                        bStartIndex++;
+                    }
+
+                    return true;
+                }
+            }
+        }
+        internal static bool Equals2(IByteBuffer a, int aStartIndex, IByteBuffer b, int bStartIndex, int length)
+        {
+            if (aStartIndex < 0 || bStartIndex < 0 || length < 0)
+            {
+                throw new ArgumentException("All indexes and lengths must be non-negative");
+            }
+            if (a.WriterIndex - length < aStartIndex || b.WriterIndex - length < bStartIndex)
+            {
+                return false;
+            }
+
+            {
+                int longCount = unchecked((int)((uint)length >> 3));
+                int byteCount = length & 7;
+
+                while (a is WrappedByteBuffer)
+                    a = a.Unwrap();
+                while (b is WrappedByteBuffer)
+                    b = b.Unwrap();
+
+                Contract.Assert(a is AbstractByteBuffer && b is AbstractByteBuffer);
+                {
+                    var _a = (AbstractByteBuffer)a;
+                    var _b = (AbstractByteBuffer)b;
+                    for (int i = longCount; i > 0; i--)
+                    {
+                        if (_a._GetLong(aStartIndex) != _b._GetLong(bStartIndex))
+                        {
+                            return false;
+                        }
+                        aStartIndex += 8;
+                        bStartIndex += 8;
+                    }
+
+                    for (int i = byteCount; i > 0; i--)
+                    {
+                        if (_a._GetByte(aStartIndex) != _b._GetByte(bStartIndex))
+                        {
+                            return false;
+                        }
+                        aStartIndex++;
+                        bStartIndex++;
+                    }
+                    return true;
+                }
+            }
+        }
+        
+        internal static bool Equals3(IByteBuffer a, int aStartIndex, IByteBuffer b, int bStartIndex, int length)
+        {
+            if (aStartIndex < 0 || bStartIndex < 0 || length < 0)
+            {
+                throw new ArgumentException("All indexes and lengths must be non-negative");
+            }
+            if (a.WriterIndex - length < aStartIndex || b.WriterIndex - length < bStartIndex)
+            {
+                return false;
+            }
+
+            Contract.Assert(a.HasArray && b.HasArray);
+            return PlatformDependent.ByteArrayEquals(a.Array, a.ArrayOffset + aStartIndex, b.Array, b.ArrayOffset + bStartIndex, length);
+        }
+        
+        internal static bool Equals32(IByteBuffer a, int aStartIndex, IByteBuffer b, int bStartIndex, int length)
+        {
+            if (aStartIndex < 0 || bStartIndex < 0 || length < 0)
+            {
+                throw new ArgumentException("All indexes and lengths must be non-negative");
+            }
+            if (a.WriterIndex - length < aStartIndex || b.WriterIndex - length < bStartIndex)
+            {
+                return false;
+            }
+
+            Contract.Assert(a.HasArray && b.HasArray);
+            return PlatformDependent.ByteArrayEqualsEx(a.Array, a.ArrayOffset + aStartIndex, b.Array, b.ArrayOffset + bStartIndex, length);
+        }
 
         /// <summary>
         ///     Returns {@code true} if and only if the two specified buffers are

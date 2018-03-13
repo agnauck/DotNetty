@@ -89,7 +89,7 @@ namespace DotNetty.Common.Internal
         {
             if (length > 0)
             {
-                Unsafe.CopyBlock(dst, src, unchecked((uint)length));
+                Unsafe.CopyBlockUnaligned(dst, src, unchecked((uint)length));
             }
         }
 
@@ -98,7 +98,7 @@ namespace DotNetty.Common.Internal
             if (length > 0)
             {
                 fixed (byte* destination = &dst[dstIndex])
-                    Unsafe.CopyBlock(destination, src, unchecked((uint)length));
+                    Unsafe.CopyBlockUnaligned(destination, src, unchecked((uint)length));
             }
         }
 
@@ -107,7 +107,7 @@ namespace DotNetty.Common.Internal
             if (length > 0)
             {
                 fixed (byte* source = &src[srcIndex])
-                    Unsafe.CopyBlock(dst, source, unchecked((uint)length));
+                    Unsafe.CopyBlockUnaligned(dst, source, unchecked((uint)length));
             }
         }
 
