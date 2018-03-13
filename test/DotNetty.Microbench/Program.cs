@@ -22,10 +22,17 @@ namespace DotNetty.Microbench
             //typeof(PooledByteBufferAllocatorBenchmark),
             //typeof(UnpooledByteBufferAllocatorBenchmark),
             //typeof(ByteBufferBenchmark),
-            typeof(UnpooledByteBufferBenchmark),
-            typeof(PooledByteBufferBenchmark),
+            //typeof(UnpooledByteBufferBenchmark),
+            //typeof(PooledByteBufferBenchmark),
             //typeof(FastThreadLocalBenchmark),
             //typeof(SingleThreadEventExecutorBenchmark)
+            typeof(ByteBufferEqualsBenchmark),
+            typeof(PooledHeapByteBuffer4Benchmark),
+            typeof(PooledUnsafeDirectByteBuffer4Benchmark),
+            typeof(PooledUnsafeDirectByteBufferEx4Benchmark),
+            typeof(UnpooledHeapByteBuffer4Benchmark),
+            typeof(UnpooledUnsafeDirectByteBuffer4Benchmark),
+            typeof(UnpooledUnsafeDirectByteBufferEx4Benchmark),
         };
 
         static void Main(string[] args)
@@ -40,18 +47,6 @@ namespace DotNetty.Microbench
             {
                 switcher.Run(args);
             }
-        }
-    }
-
-    public class MultipleRuntimes : ManualConfig
-    {
-        public MultipleRuntimes()
-        {
-            Add(Job.ShortRun.With(Platform.X64).With(Runtime.Core).With(CsProjCoreToolchain.NetCoreApp11)); // .NET Core 1.1
-            Add(Job.ShortRun.With(Platform.X64).With(Runtime.Core).With(CsProjCoreToolchain.NetCoreApp21)); // .NET Core 2.1
-
-            Add(Job.ShortRun.With(Platform.X64).With(Runtime.Clr).With(CsProjClassicNetToolchain.Net46).WithIsBaseline(true)); // NET 4.6
-            Add(Job.ShortRun.With(Platform.X64).With(Runtime.Mono).With(CsProjClassicNetToolchain.Net46)); // Mono
         }
     }
 }
