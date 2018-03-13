@@ -24,7 +24,7 @@ namespace DotNetty.Microbench.Buffers
         private GCHandle pinnedHandle;
         private byte[] unpinedData;
 
-        int total_len = 4096;
+        int total_len = 8192;
         int off1 = 0;
         int off2 = 4096;
         int cpy_len = 4096;
