@@ -201,9 +201,9 @@ namespace DotNetty.Microbench.Buffers
         public int Unsafe_Read() => Unsafe.ReadUnaligned<int>(ref unpinedData[off1]);
 
         [Benchmark, BenchmarkCategory("Read")]
-        public unsafe int Read_Pointer() => *((byte*)Unsafe.Add<byte>(pinedPointer1, off1));
+        public unsafe int Read_Pointer() => *((int*)Unsafe.Add<byte>(pinedPointer1, off1));
 
         [Benchmark, BenchmarkCategory("Read")]
-        public unsafe int Read_Array() => unpinedData[off1];
+        public unsafe int Read_Array() => (unpinedData[off1] << 24) | (unpinedData[off1 + 1] << 16) | (unpinedData[off1 + 2] << 8) | (unpinedData[off1 + 3]) ;
     }
 }
