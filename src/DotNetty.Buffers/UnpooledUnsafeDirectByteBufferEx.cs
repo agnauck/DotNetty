@@ -14,7 +14,7 @@ namespace DotNetty.Buffers
     using System.Threading.Tasks;
     using DotNetty.Common.Internal;
 
-    public unsafe class UnpooledUnsafeDirectByteBufferEx : AbstractReferenceCountedByteBuffer
+    public class UnpooledUnsafeDirectByteBufferEx : AbstractReferenceCountedByteBuffer
     {
         readonly IByteBufferAllocator allocator;
 
@@ -158,7 +158,7 @@ namespace DotNetty.Buffers
             return ref this.buffer.AsRef();
         }
 
-        public override IntPtr AddressOfPinnedMemory()
+        public unsafe override IntPtr AddressOfPinnedMemory()
         {
             if (!this.memoryPin.HasPointer)
                 this.memoryPin = this.memoryRef.Retain(true);

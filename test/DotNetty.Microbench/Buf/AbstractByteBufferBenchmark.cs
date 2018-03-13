@@ -20,6 +20,8 @@ namespace DotNetty.Microbench.Buffers
         }
 
         protected AbstractByteBuffer buffer;
+        protected int offset = 4;
+        protected int len = 4;
 
         protected abstract AbstractByteBuffer Alloc(int capacity);
 
@@ -42,55 +44,55 @@ namespace DotNetty.Microbench.Buffers
 
         [Benchmark]
         [BenchmarkCategory("CheckIndex")]
-        public void CheckIndex() => this.buffer.CheckIndex(4, 8);
+        public void CheckIndex() => this.buffer.CheckIndex(this.offset, this.len);
 
         [Benchmark]
         [BenchmarkCategory("GetByte")]
-        public byte GetByte() => this.buffer.GetByte(4);
+        public byte GetByte() => this.buffer.GetByte(this.offset);
 
         [Benchmark]
         [BenchmarkCategory("_GetByte")]
-        public byte _GetByte() => this.buffer._GetByte(4);
+        public byte _GetByte() => this.buffer._GetByte(this.offset);
 
         [Benchmark]
         [BenchmarkCategory("_GetUnsignedMedium")]
-        public int _GetUnsignedMedium() => this.buffer._GetUnsignedMedium(4);
+        public int _GetUnsignedMedium() => this.buffer._GetUnsignedMedium(this.offset);
 
         [Benchmark]
         [BenchmarkCategory("_GetUnsignedMediumLE")]
-        public int _GetUnsignedMediumLE() => this.buffer._GetUnsignedMediumLE(4);
+        public int _GetUnsignedMediumLE() => this.buffer._GetUnsignedMediumLE(this.offset);
 
         [Benchmark]
         [BenchmarkCategory("_GetInt")]
-        public int _GetInt() => this.buffer._GetInt(4);
+        public int _GetInt() => this.buffer._GetInt(this.offset);
 
         [Benchmark]
         [BenchmarkCategory("_GetIntLE")]
-        public int _GetIntLE() => this.buffer._GetIntLE(4);
+        public int _GetIntLE() => this.buffer._GetIntLE(this.offset);
 
         [Benchmark]
         [BenchmarkCategory("EnsureWritable")]
-        public void EnsureWritable() => this.buffer.EnsureWritable(4);
+        public void EnsureWritable() => this.buffer.EnsureWritable(this.len);
 
         [Benchmark]
         [BenchmarkCategory("_SetByte")]
-        public void _SetByte() => this.buffer._SetByte(4, 4);
+        public void _SetByte() => this.buffer._SetByte(this.offset, 4);
 
         [Benchmark]
         [BenchmarkCategory("_SetMedium")]
-        public void _SetMedium() => this.buffer._SetMedium(4, 4);
+        public void _SetMedium() => this.buffer._SetMedium(this.offset, 4);
 
         [Benchmark]
         [BenchmarkCategory("_SetMediumLE")]
-        public void _SetMediumLE() => this.buffer._SetMediumLE(4, 4);
+        public void _SetMediumLE() => this.buffer._SetMediumLE(this.offset, 4);
 
         [Benchmark]
         [BenchmarkCategory("_SetInt")]
-        public void _SetInt() => this.buffer._SetInt(4, 4);
+        public void _SetInt() => this.buffer._SetInt(this.offset, 4);
 
         [Benchmark]
         [BenchmarkCategory("_SetIntLE")]
-        public void _SetIntLE() => this.buffer._SetIntLE(4, 4);
+        public void _SetIntLE() => this.buffer._SetIntLE(this.offset, 4);
     }
 
     [BenchmarkCategory("PooledByteBuffer")]
