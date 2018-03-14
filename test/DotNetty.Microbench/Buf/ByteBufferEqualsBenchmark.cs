@@ -40,13 +40,13 @@ namespace DotNetty.Microbench.Buffers
             this.buffer2.Release();
         }
 
-        [Benchmark]
+        //[Benchmark]
         public bool EqualsWithSpan() => ByteBufferUtil.Equals32(this.buffer1, off, this.buffer2, off, len);
 
-        [Benchmark]
+        //[Benchmark]
         public bool EqualsWithArray() => ByteBufferUtil.Equals3(this.buffer1, off, this.buffer2, off, len);
 
-        [Benchmark]
+        //[Benchmark]
         public bool Equals_Get() => ByteBufferUtil.Equals2(this.buffer1, off, this.buffer2, off, len);
 
         [Benchmark(Baseline = true)]

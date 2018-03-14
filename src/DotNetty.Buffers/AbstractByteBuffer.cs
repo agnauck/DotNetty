@@ -29,7 +29,7 @@ namespace DotNetty.Buffers
         internal static readonly ResourceLeakDetector LeakDetector = ResourceLeakDetector.Create<IByteBuffer>();
 
         int readerIndex;
-        int writerIndex;
+        public int writerIndex;
 
         int markedReaderIndex;
         int markedWriterIndex;
@@ -92,7 +92,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        protected void SetWriterIndex0(int index)
+        public void SetWriterIndex0(int index)
         {
             this.writerIndex = index;
         }
@@ -235,22 +235,27 @@ namespace DotNetty.Buffers
         {
             if (minWritableBytes < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(minWritableBytes),
-                    "expected minWritableBytes to be greater than zero");
+                ThrowHelper.ThrowArgumentOutOfRangeException_LessThanZero(nameof(minWritableBytes), minWritableBytes);
             }
 
             this.EnsureWritable0(minWritableBytes);
             return this;
         }
 
-        protected internal void EnsureWritable0(int minWritableBytes)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void EnsureWritable0(int minWritableBytes)
         {
             this.EnsureAccessible();
             if (minWritableBytes <= this.WritableBytes)
             {
                 return;
             }
+            this.EnsureWritable1(minWritableBytes);
+        }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public void EnsureWritable1(int minWritableBytes)
+        {
             if (minWritableBytes > this.MaxCapacity - this.writerIndex)
             {
                 throw new IndexOutOfRangeException($"writerIndex({this.writerIndex}) + minWritableBytes({minWritableBytes}) exceeds maxCapacity({this.MaxCapacity}): {this}");
@@ -1232,20 +1237,22 @@ namespace DotNetty.Buffers
             return buf.ToString();
         }
 
-        protected void CheckIndex(int index) => this.CheckIndex(index, 1);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void CheckIndex(int index) => this.CheckIndex(index, 1);
 
-        protected internal void CheckIndex(int index, int fieldLength)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void CheckIndex(int index, int fieldLength)
         {
             this.EnsureAccessible();
             this.CheckIndex0(index, fieldLength);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void CheckIndex0(int index, int fieldLength)
+        public void CheckIndex0(int index, int fieldLength)
         {
-            if (MathUtil.IsOutOfBounds(index, fieldLength, this.Capacity))
+            if (MathUtil.IsOutOfBounds2(index, fieldLength, this.Capacity))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"index: {index}, length: {fieldLength} (expected: range(0, {this.Capacity}))");
+                ThrowHelper.ThrowIndexOutOfRangeException("index: {0}, length: {1} (expected: range(0, {2}))", index, fieldLength, this.Capacity);
             }
         }
 
@@ -1255,7 +1262,7 @@ namespace DotNetty.Buffers
             this.CheckIndex(index, length);
             if (MathUtil.IsOutOfBounds(srcIndex, length, srcCapacity))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"srcIndex: {srcIndex}, length: {length} (expected: range(0, {srcCapacity}))");
+                ThrowHelper.ThrowIndexOutOfRangeException("srcIndex: {0}, length: {1} (expected: range(0, {2}))", srcIndex, length, srcCapacity);
             }
         }
 
@@ -1265,15 +1272,16 @@ namespace DotNetty.Buffers
             this.CheckIndex(index, length);
             if (MathUtil.IsOutOfBounds(dstIndex, length, dstCapacity))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"dstIndex: {dstIndex}, length: {length} (expected: range(0, {dstCapacity}))");
+                ThrowHelper.ThrowIndexOutOfRangeException("dstIndex: {0}, length: {1} (expected: range(0, {2}))", dstIndex, length, dstCapacity);
             }
         }
 
-        protected void CheckReadableBytes(int minimumReadableBytes)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void CheckReadableBytes(int minimumReadableBytes)
         {
             if (minimumReadableBytes < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(minimumReadableBytes), $"minimumReadableBytes: {minimumReadableBytes} (expected: >= 0)");
+                ThrowHelper.ThrowArgumentOutOfRangeException_LessThanZero(nameof(minimumReadableBytes), minimumReadableBytes);
             }
 
             this.CheckReadableBytes0(minimumReadableBytes);
@@ -1288,17 +1296,23 @@ namespace DotNetty.Buffers
             }
         }
 
-        void CheckReadableBytes0(int minimumReadableBytes)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void CheckReadableBytes0(int minimumReadableBytes)
         {
             this.EnsureAccessible();
             if (this.readerIndex > this.writerIndex - minimumReadableBytes)
             {
-                throw new IndexOutOfRangeException($"readerIndex({this.readerIndex}) + length({minimumReadableBytes}) exceeds writerIndex({this.writerIndex}): {this}");
+                _ThrowCheckReadableBytes0(minimumReadableBytes);
             }
         }
 
+        private void _ThrowCheckReadableBytes0(int minimumReadableBytes)
+        {
+            throw new IndexOutOfRangeException($"readerIndex({this.readerIndex}) + length({minimumReadableBytes}) exceeds writerIndex({this.writerIndex}): {this}");
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected internal void EnsureAccessible()
+        public void EnsureAccessible()
         {
             if (CheckAccessible && this.ReferenceCount == 0)
             {

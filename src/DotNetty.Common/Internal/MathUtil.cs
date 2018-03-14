@@ -8,9 +8,17 @@ namespace DotNetty.Common.Internal
 
     public static class MathUtil
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static bool IsOutOfBounds(int index, int length, int capacity) =>
-            (index | length | (index + length) | (capacity - (index + length))) < 0;
+            unchecked(index | length | (index + length) | (capacity - (index + length))) < 0;
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static bool IsOutOfBounds2(int index, int length, int capacity) =>
+            length < 0 || unchecked(index | (index + length) | (capacity - (index + length))) < 0;
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static bool IsOutOfBounds3(int index, int length, int capacity) =>
+            unchecked(index | (index + length) | (capacity - (index + length))) < 0 || length < 0;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int FindNextPositivePowerOfTwo(int value)

@@ -19,7 +19,7 @@ namespace DotNetty.Microbench
             Add(cfg.UnfreezeCopy().With(Runtime.Core).With(CsProjCoreToolchain.NetCoreApp21).WithId("netcoreapp2.1")); // .NET Core 2.1
 
             Add(cfg.UnfreezeCopy().With(Runtime.Clr).With(CsProjClassicNetToolchain.Net46).WithIsBaseline(true).WithId("net46")); // NET 4.6
-            Add(cfg.UnfreezeCopy().With(Runtime.Mono).WithId("mono")); // Mono
+            Add(cfg.UnfreezeCopy().With(Runtime.Mono)/*.With(CsProjClassicNetToolchain.Net46)*/.WithId("mono")); // Mono
         }
     }
 }

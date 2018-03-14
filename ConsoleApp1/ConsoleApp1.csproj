@@ -11,4 +11,9 @@
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.0-preview1-26216-02" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\src\DotNetty.Buffers\DotNetty.Buffers.csproj" />
+    <ProjectReference Include="..\src\DotNetty.Common\DotNetty.Common.csproj" />
+  </ItemGroup>
+
 </Project>

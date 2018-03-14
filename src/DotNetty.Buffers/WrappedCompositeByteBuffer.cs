@@ -116,7 +116,7 @@ namespace DotNetty.Buffers
 
         public override int CompareTo(IByteBuffer that) => this.wrapped.CompareTo(that);
 
-        public override int ReferenceCount => this.wrapped.ReferenceCount;
+        public sealed override int ReferenceCount => this.wrapped.ReferenceCount;
 
         public override IByteBuffer Duplicate() => this.wrapped.Duplicate();
 

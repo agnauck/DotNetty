@@ -47,6 +47,10 @@ namespace DotNetty.Microbench.Buffers
         public void CheckIndex() => this.buffer.CheckIndex(this.offset, this.len);
 
         [Benchmark]
+        [BenchmarkCategory("CheckIndex4")]
+        public void CheckIndex4() => this.buffer.CheckIndex(this.offset, 4);
+
+        [Benchmark]
         [BenchmarkCategory("GetByte")]
         public byte GetByte() => this.buffer.GetByte(this.offset);
 
@@ -54,11 +58,11 @@ namespace DotNetty.Microbench.Buffers
         [BenchmarkCategory("_GetByte")]
         public byte _GetByte() => this.buffer._GetByte(this.offset);
 
-        [Benchmark]
+        //[Benchmark]
         [BenchmarkCategory("_GetUnsignedMedium")]
         public int _GetUnsignedMedium() => this.buffer._GetUnsignedMedium(this.offset);
 
-        [Benchmark]
+        //[Benchmark]
         [BenchmarkCategory("_GetUnsignedMediumLE")]
         public int _GetUnsignedMediumLE() => this.buffer._GetUnsignedMediumLE(this.offset);
 
@@ -67,6 +71,10 @@ namespace DotNetty.Microbench.Buffers
         public int _GetInt() => this.buffer._GetInt(this.offset);
 
         [Benchmark]
+        [BenchmarkCategory("GetInt")]
+        public int GetInt() => this.buffer.GetInt(this.offset);
+
+        //[Benchmark]
         [BenchmarkCategory("_GetIntLE")]
         public int _GetIntLE() => this.buffer._GetIntLE(this.offset);
 
@@ -74,23 +82,31 @@ namespace DotNetty.Microbench.Buffers
         [BenchmarkCategory("EnsureWritable")]
         public void EnsureWritable() => this.buffer.EnsureWritable(this.len);
 
-        [Benchmark]
+        //[Benchmark]
         [BenchmarkCategory("_SetByte")]
         public void _SetByte() => this.buffer._SetByte(this.offset, 4);
 
-        [Benchmark]
+        //[Benchmark]
         [BenchmarkCategory("_SetMedium")]
         public void _SetMedium() => this.buffer._SetMedium(this.offset, 4);
 
-        [Benchmark]
+        //[Benchmark]
         [BenchmarkCategory("_SetMediumLE")]
         public void _SetMediumLE() => this.buffer._SetMediumLE(this.offset, 4);
 
-        [Benchmark]
+        //[Benchmark]
         [BenchmarkCategory("_SetInt")]
         public void _SetInt() => this.buffer._SetInt(this.offset, 4);
 
-        [Benchmark]
+        [BenchmarkCategory("WriteInt")]
+        public void WriteInt()
+        {
+            var oldIdx = this.buffer.writerIndex;
+            this.buffer.WriteInt(4);
+            this.buffer.writerIndex = oldIdx;
+        }
+
+        //[Benchmark]
         [BenchmarkCategory("_SetIntLE")]
         public void _SetIntLE() => this.buffer._SetIntLE(this.offset, 4);
     }
